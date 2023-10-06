@@ -1,0 +1,37 @@
+---
+- name: Install ArgoCD on Minikube
+  hosts: localhost
+  gather_facts: yes
+  become: yes
+
+  tasks:
+    - name: Install ArgoCD on minikube
+      shell: |
+        kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/v2.5.8/manifests/install.yaml
+        kubectl get svc -n argocd
+        kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "LoadBalancer"}}'
+      become: yes
+      become_user: minikube
+
+    - name: Get ArgoCD admin password
+      command: >
+        kubectl -n argocd get pods -l app.kubernetes.io/name=argocd-server -o name | \
+        cut -d'/' -f 2
+      #become: yes
+      #become_user: minikube
+      register: argocd_password
+
+    - name: Display ArgoCD admin password
+      debug:
+        var: argocd_password.stdout
+
+- name: Wait for ArgoCD to be ready
+  hosts: localhost
+  gather_facts: yes
+  become: yes
+
+  tasks:
+    - name: Wait for ArgoCD server to be ready
+      shell: >
+        kubectl wait --for=condition=Available deployment.apps/argocd-server -n argocd
+      #become_user: minikube

@@ -1,0 +1,26 @@
+---
+- name: Install Minikube with Docker on Ubuntu
+  hosts: localhost
+  gather_facts: yes
+  become: yes
+ 
+  tasks:
+    - name: Install necessary packages
+      apt:
+        name: "{{ item }}"
+        state: present
+      become: yes
+      with_items:
+        - curl
+        - docker.io
+
+    - name: Download and install Minikube
+      shell: |
+        curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+        sudo install minikube-linux-amd64 /usr/local/bin/minikube
+        rm minikube-linux-amd64
+      become: yes
+
+    - name: Start Minikube with Docker driver
+      command: minikube start --driver=docker --force
+      become: no
